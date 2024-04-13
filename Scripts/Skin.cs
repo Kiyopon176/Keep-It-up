@@ -1,86 +1,93 @@
-﻿using UnityEngine;
-using UnityEngine.UI;
+﻿using System;
 using TMPro;
+using UnityEngine;
+using UnityEngine.Serialization;
+using UnityEngine.UI;
 
 public class Skin : MonoBehaviour
 {
-    public Sprite SkinSprite;
-    public int price;
-    public TMP_Text PriceText,StateText;
-    public bool is_bought = false;
-    public bool isActiveSkin = false;
-    public Image Lock;
-    [SerializeField] private Sprite openLock, closeLock;
+    [SerializeField] public int SkinID;
+    [SerializeField] private bool isBought;
+    [SerializeField] private string spriteResourcePath;
+    [SerializeField] private TMP_Text priceText;
 
-    [SerializeField] private UIManager uiManager;
+    public TMP_Text stateText;
+    public Shop_System ShopSystem;
+
+    private Button childButton;
+    private TMP_Text childText;
+    private Image childImage;
+    [SerializeField] private int price;
     
-    [SerializeField] private Shop_System shopSystem;
-
     private void Start()
     {
-        for (int i = 0; i < shopSystem.SkinsList.Count; i++)
+        Transform firstChild = transform.Find("BuyButton");
+        Transform priceComponent = transform.Find("Price");
+
+        priceText = priceComponent.GetComponent<TMP_Text>();
+            
+        priceText.text = "Price: " + price.ToString();
+        if (firstChild != null)
         {
-            if (shopSystem.ActiveSkin == this.SkinSprite)
-            {
-                isActiveSkin = true;
-                break;
-            }
+            Transform secondChild = firstChild.Find("StateText");
+            stateText = secondChild.GetComponent<TMP_Text>();
         }
 
-        PriceText.text = "Price" + price.ToString();
-        foreach (var obj in shopSystem.purchasedItems)
+        LoadSprite();
+        isBought = IsSkinBought(SkinID);
+        if (isBought)
         {
-            if (obj == this)
-            {
-                is_bought = true;
-            }
-        }
-        if (is_bought)
-        {
-            StateText.text = isActiveSkin ? "Equipped" : "Equip";
-            Lock.sprite = openLock;
-        }
-        else
-        {
-            StateText.text = "Buy";
-            Lock.sprite = closeLock;
+            print("is bought");
+            UpdateState();
         }
     }
 
     public void buy()
     {
-        if (is_bought && !isActiveSkin)
+        if (!isBought && PlayerPrefs.GetInt("overAllScore") >= price)
         {
-            shopSystem.UpdateSkins(this);
-            UIManager.ActiveSkin = this.SkinSprite;
-            isActiveSkin = true;
-            StateText.text = "Equipped";
+            ShopSystem.UpdateLists(this);
+            PlayerPrefs.SetInt("overAllScore", PlayerPrefs.GetInt("overAllScore") - price);
+            isBought = true;
+            GamePlay.OnBought?.Invoke();
+            UpdateState();
         }
-        else if(uiManager.overAllScore >= price && !is_bought)
+        else if(isBought)
         {
-            shopSystem.UpdateSkins(this);
-            shopSystem.purchasingSequence.Add(this);
-            UIManager.ActiveSkin = this.SkinSprite;
-            isActiveSkin = true;
-            StateText.text = "Equipped";
-            uiManager.overAllScore -= price;
-            shopSystem.AddSkinToPurchasedItems(this);
-            is_bought = true;
-            UpdateSkinState();
+            PlayerPrefs.SetString("ActiveSkinPath", spriteResourcePath);
+            ShopSystem.UpdateStateTexts(this);
+            UpdateState();
         }
     }
 
-    private void UpdateSkinState()
+    private bool IsSkinBought(int skinID)
     {
-        if (is_bought)
+        return ShopSystem.purchasedSkinsList.Contains(skinID);
+    }
+
+    void UpdateState()
+    {
+        if (PlayerPrefs.GetString("ActiveSkinPath") == spriteResourcePath)
         {
-            StateText.text = isActiveSkin ? "Equipped" : "Equip";
-            Lock.sprite = openLock;
+            stateText.text = "Equipped";
         }
         else
         {
-            StateText.text = "Buy";
-            Lock.sprite = closeLock;
+            stateText.text = "Equip";
         }
+    }
+
+    void LoadSprite()
+    {
+        spriteResourcePath = "Skins/" + this.name;
+        Transform childTransform = transform.Find("Skin");
+
+        if (childTransform != null)
+        {
+            childImage = childTransform.GetComponent<Image>();
+        }
+
+        childImage.sprite = Resources.Load<Sprite>(spriteResourcePath);
+
     }
 }

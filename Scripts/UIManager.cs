@@ -14,8 +14,6 @@ public class UIManager : MonoBehaviour
     public float duration = 1f;
 
     public int Score = 0, HighScore, overAllScore;
-    public static Sprite ActiveSkin;
-    
 
     public BallController ballController;
 
@@ -37,15 +35,7 @@ public class UIManager : MonoBehaviour
     public AnimationCurve Curve;
 
     public static UIManager instance;
-    void Awake()
-    {
-        // if (instance == null) { 
-        //     instance = this; 
-        // } else if(instance == this){ 
-        //     Destroy(gameObject); 
-        // }
-        // DontDestroyOnLoad(gameObject);
-    }
+    
 
     public void ShowShop()
     {
@@ -62,6 +52,7 @@ public class UIManager : MonoBehaviour
     {
         GamePlay.IsDeadOnce = false;
         GamePlay.isGameEnable = true;
+        slider.value = PlayerPrefs.GetFloat("musicVolume");
         isMenuActive = false;
         int ActiveSceneIndex = SceneManager.GetActiveScene().buildIndex;
         if(ActiveSceneIndex == 0)
@@ -81,20 +72,41 @@ public class UIManager : MonoBehaviour
     }
     private void OnEnable()
     {
+        GamePlay.OnDead += saveScore;
         GamePlay.OnDead += DeadMenu;
         GamePlay.OnScored += ScoreUpdate;
+        GamePlay.OnBought += UpdateOverallOnBought;
     }
 
     private void OnDisable()
     {
+        GamePlay.OnDead -= saveScore;
         GamePlay.OnDead -= DeadMenu;
         GamePlay.OnScored -= () => ScoreUpdate();
+        GamePlay.OnBought -= UpdateOverallOnBought;
     }
 
-    public void DeadMenu()
+    void saveScore()
     {
+        overAllScore = PlayerPrefs.GetInt("overAllScore");
         overAllScore += Score;
         PlayerPrefs.SetInt("overAllScore", overAllScore);
+        GamePlay.OnDead -= saveScore;
+    }
+
+    public void SaveVolume()
+    {
+        PlayerPrefs.SetFloat("musicVolume", slider.value);
+    }
+    
+    void UpdateOverallOnBought()
+    {
+        overAllScore = PlayerPrefs.GetInt("overAllScore");
+        overAllScoreText.text = overAllScore.ToString();
+    }
+    
+    public void DeadMenu()
+    {
         HighScore = PlayerPrefs.GetInt("HighScore");
         if (Score > HighScore)
         {

@@ -9,5 +9,7 @@ public class GamePlay
     public static bool IsDeadOnce;
     public static Action OnDead;
     public static Action OnScored;
+
     public static Action OnBought;
+    public static Action OnEquipped;
 }

@@ -5,69 +5,64 @@ using UnityEngine;
 
 public class Shop_System : MonoBehaviour
 {
-    public List<Skin> SkinsList = new List<Skin>();
-    public List<Sprite> SkinsSprites = new List<Sprite>();
-    public Sprite ActiveSkin;
-    public List<Skin> purchasedItems;
-    public List<Skin> purchasingSequence;
-    
+    public List<Skin> SkinsList;
+    public List<int> purchasedSkinsList;
+    private const string purchasedListKey = "PurchasedList";
 
-    private const string SkinsListKey = "SkinsList";
-    private const string PurchasedItemsKey = "PurchasedItems";
-
-    public void UpdateSkins(Skin skin)
-    {
-        foreach (var skin2 in purchasingSequence)
-        {
-            if (skin2 != SkinsList[^1] && skin2 != skin)
-            {
-                skin2.StateText.text = "Equip";
-                skin2.isActiveSkin = false;
-            }
-
-            if (skin2 == skin)
-            {
-                
-            }
-        }
-    }
     private void Start()
     {
-        ActiveSkin = UIManager.ActiveSkin;
-        LoadData();
-    }
-
-    private void OnDestroy()
-    {
-        SaveData();
-    }
-
-    private void SaveData()
-    {
-        PlayerPrefs.SetString(SkinsListKey, JsonUtility.ToJson(SkinsList));
-        PlayerPrefs.SetString(PurchasedItemsKey, JsonUtility.ToJson(purchasedItems));
-        PlayerPrefs.Save();
-    }
-
-    private void LoadData()
-    {
-        if (PlayerPrefs.HasKey(PurchasedItemsKey))
+        if (PlayerPrefs.GetString(purchasedListKey) != "")
         {
-            string purchasedItemsJson = PlayerPrefs.GetString(PurchasedItemsKey);
-            purchasedItems = JsonUtility.FromJson<List<Skin>>(purchasedItemsJson);
+            LoadPurchasedList();
         }
     }
 
-    public void AddSkinToPurchasedItems(Skin skin)
+    public void UpdateLists(Skin skin)
     {
-        purchasedItems.Add(skin);
-        UIManager.ActiveSkin = skin.SkinSprite;
-        SaveData();
+        if (!purchasedSkinsList.Contains(skin.SkinID))
+        {
+            purchasedSkinsList.Add(skin.SkinID);
+        }
+        Save();
     }
 
-    public void RemoveSkinFromPurchasedItems(Skin skin)
+    public void UpdateStateTexts(Skin skin)
     {
-        purchasedItems.Remove(skin);
-        SaveData();
+        foreach (var skin1 in SkinsList)
+        {
+            if (skin1 != skin)
+            {
+                skin1.stateText.text = "Equip";
+            }
+        }
+    }
+
+    private void Save()
+    {
+        string numbersString = string.Join(",", purchasedSkinsList);
+
+        PlayerPrefs.SetString(purchasedListKey, numbersString);
+        PlayerPrefs.Save();
+
+        Debug.Log("Numbers saved.");
+    }
+
+    public void LoadPurchasedList()
+    {
+        string numbersString = PlayerPrefs.GetString(purchasedListKey);
+        print(numbersString);
+        string[] numberStrings = numbersString.Split(',');
+
+        foreach (string str in numberStrings)
+        {
+            if (int.TryParse(str, out var number))
+            {
+                purchasedSkinsList.Add(number);
+            }
+            else
+            {    
+                Debug.LogError("Failed to parse: " + str);
+            }
+        }
     }
 }

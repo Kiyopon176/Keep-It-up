@@ -16,7 +16,7 @@ public class BallController : MonoBehaviour
 
     private void Start()
     {
-        gameObject.GetComponent<SpriteRenderer>().sprite = UIManager.ActiveSkin == null ? standartSprite : UIManager.ActiveSkin;
+        gameObject.GetComponent<SpriteRenderer>().sprite = PlayerPrefs.GetString("ActiveSkinPath") == null ? standartSprite : Resources.Load<Sprite>(PlayerPrefs.GetString("ActiveSkinPath"));;
         GamePlay.isGameEnable = true;
         rb = Ball.GetComponent<Rigidbody2D>();
         float screenHeight = Camera.main.orthographicSize * 2f;
@@ -29,7 +29,6 @@ public class BallController : MonoBehaviour
         Vector3 worldTopRightCorner = Camera.main.ScreenToWorldPoint(topRightCorner);
         _leftX = worldTopLeftCorner.x;
         _rightX = -_leftX;
-
         uIManager = FindObjectOfType<UIManager>();
         if (uIManager != null)
         {
@@ -54,6 +53,7 @@ public class BallController : MonoBehaviour
             if (uIManager.Score > 1)
             {
                 GamePlay.OnDead?.Invoke();
+                print(uIManager.overAllScore);
                 uIManager.isMenuActive = true;
             }
             else
